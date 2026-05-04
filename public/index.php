@@ -3,16 +3,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Dotenv\Dotenv;
 use App\Infrastructure\Persistence\DatabaseConnection;
+use App\Infrastructure\Persistence\UserRepository;
+use Dotenv\Dotenv;
 
-(function () {
-    // Load environment variables
-    $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-    $dotenv->load();
-    
-    // Initialize database connection
-    $db = DatabaseConnection::getInstance();
-    
-    // Now you can use $db for queries
-})();
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../config');
+$dotenv->load();
+
+$pdo = DatabaseConnection::createFromEnv();
+
+$userRepository = new UserRepository($pdo);
+
+// from here, pass $userRepository into your use cases/controllers

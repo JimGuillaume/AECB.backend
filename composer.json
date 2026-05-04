@@ -3,7 +3,8 @@
   "type": "project",
   "require": {
     "php": "^8.0",
-    "vlucas/phpdotenv": "^5.5"
+    "vlucas/phpdotenv": "^5.5",
+    "zircote/swagger-php": "^6.1"
   },
   "autoload": {
     "psr-4": {
