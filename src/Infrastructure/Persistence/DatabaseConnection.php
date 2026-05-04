@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence;
 
 use PDO;
 use PDOException;
+use RuntimeException;
 
 final class DatabaseConnection
 {
@@ -16,12 +17,7 @@ final class DatabaseConnection
         $user = $_ENV['DB_USER'] ?? '';
         $password = $_ENV['DB_PASSWORD'] ?? '';
 
-        $dsn = sprintf(
-            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-            $host,
-            $port,
-            $dbName
-        );
+        $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
 
         try {
             return new PDO($dsn, $user, $password, [
@@ -29,8 +25,8 @@ final class DatabaseConnection
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
-        } catch (PDOException $e) {
-            throw new PDOException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
+        } catch (PDOException $exception) {
+            throw new RuntimeException('Database connection failed: ' . $exception->getMessage(), 0, $exception);
         }
     }
 }

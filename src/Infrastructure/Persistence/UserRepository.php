@@ -15,7 +15,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function findById(int $id): ?User
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT user_id AS id, first_name, last_name, email, password_hash, role FROM users WHERE user_id = :id');
         $stmt->execute(['id' => $id]);
 
         $row = $stmt->fetch();
@@ -29,7 +29,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function findByEmail(string $email): ?User
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = :email');
+        $stmt = $this->pdo->prepare('SELECT user_id AS id, first_name, last_name, email, password_hash, role FROM users WHERE email = :email');
         $stmt->execute(['email' => $email]);
 
         $row = $stmt->fetch();
@@ -43,7 +43,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT * FROM users');
+        $stmt = $this->pdo->query('SELECT user_id AS id, first_name, last_name, email, password_hash, role FROM users');
         $rows = $stmt->fetchAll();
 
         return array_map([$this, 'mapRowToUser'], $rows);
@@ -64,12 +64,19 @@ class UserRepository implements UserRepositoryInterface
             'role' => $user->role(),
         ]);
 
-        return $user;
+        return new User(
+            $user->first_name(),
+            $user->last_name(),
+            $user->email(),
+            $user->password_hash(),
+            $user->role(),
+            (int) $this->pdo->lastInsertId()
+        );
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE user_id = :id');
         return $stmt->execute(['id' => $id]);
     }
 
@@ -82,7 +89,7 @@ class UserRepository implements UserRepositoryInterface
                  email = :email,
                  password_hash = :password_hash,
                  role = :role
-             WHERE id = :id'
+             WHERE user_id = :id'
         );
 
         $stmt->execute([
@@ -99,13 +106,6 @@ class UserRepository implements UserRepositoryInterface
 
     private function mapRowToUser(array $row): User
     {
-        return new User(
-            (int) $row['id'],
-            $row['first_name'],
-            $row['last_name'],
-            $row['email'],
-            $row['password_hash'],
-            $row['role']
-        );
+        return User::fromRow($row);
     }
 }
