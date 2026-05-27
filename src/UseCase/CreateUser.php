@@ -18,7 +18,7 @@ final class CreateUser
         string $lastName,
         string $email,
         string $password,
-        string $role = 'user'
+        string $role = 'worker'
     ): User {
         $existingUser = $this->users->findByEmail($email);
 

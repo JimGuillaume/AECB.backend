@@ -4,17 +4,28 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Domain\User;
+use App\Infrastructure\Security\JwtService;
+use App\UseCase\AuthenticateUser;
+use App\UseCase\DeleteUser;
 use App\UseCase\CreateUser;
 use App\UseCase\GetUserById;
 use App\UseCase\ListUsers;
+use App\UseCase\UpdateUser;
 use DomainException;
 
 final class UserController
 {
+    private const ALLOWED_ROLES = ['admin', 'manager', 'team_leader', 'worker'];
+
     public function __construct(
         private ListUsers $listUsers,
         private GetUserById $getUserById,
-        private CreateUser $createUser
+        private CreateUser $createUser,
+        private UpdateUser $updateUser,
+        private DeleteUser $deleteUser,
+        private AuthenticateUser $authenticateUser,
+        private JwtService $jwtService,
+        private int $jwtTtlSeconds
     ) {
     }
 
@@ -43,10 +54,15 @@ final class UserController
         $lastName = trim((string) ($payload['last_name'] ?? ''));
         $email = trim((string) ($payload['email'] ?? ''));
         $password = (string) ($payload['password'] ?? '');
-        $role = trim((string) ($payload['role'] ?? 'user'));
+        $role = trim((string) ($payload['role'] ?? 'worker'));
 
         if ($firstName === '' || $lastName === '' || $email === '' || $password === '') {
             $this->respond(['message' => 'first_name, last_name, email, and password are required'], 422);
+            return;
+        }
+
+        if (!$this->isAllowedRole($role)) {
+            $this->respond(['message' => 'role must be one of: admin, manager, team_leader, worker'], 422);
             return;
         }
 
@@ -58,6 +74,119 @@ final class UserController
         }
 
         $this->respond($this->serializeUser($user), 201);
+    }
+
+    public function update(int $id): void
+    {
+        $payload = $this->readJsonBody();
+
+        $firstName = trim((string) ($payload['first_name'] ?? ''));
+        $lastName = trim((string) ($payload['last_name'] ?? ''));
+        $email = trim((string) ($payload['email'] ?? ''));
+        $password = array_key_exists('password', $payload) ? trim((string) $payload['password']) : null;
+        $role = array_key_exists('role', $payload) ? trim((string) $payload['role']) : null;
+
+        if ($firstName === '' || $lastName === '' || $email === '') {
+            $this->respond(['message' => 'first_name, last_name, and email are required'], 422);
+            return;
+        }
+
+        if ($role !== null && $role !== '' && !$this->isAllowedRole($role)) {
+            $this->respond(['message' => 'role must be one of: admin, manager, team_leader, worker'], 422);
+            return;
+        }
+
+        try {
+            $user = $this->updateUser->execute($id, $firstName, $lastName, $email, $password, $role);
+        } catch (DomainException $exception) {
+            $this->respond(['message' => $exception->getMessage()], 409);
+            return;
+        }
+
+        if ($user === null) {
+            $this->respond(['message' => 'User not found'], 404);
+            return;
+        }
+
+        $this->respond($this->serializeUser($user));
+    }
+
+    public function destroy(int $id): void
+    {
+        if (!$this->deleteUser->execute($id)) {
+            $this->respond(['message' => 'User not found'], 404);
+            return;
+        }
+
+        $this->respond(['message' => 'User deleted']);
+    }
+
+    public function login(): void
+    {
+        $payload = $this->readJsonBody();
+
+        $email = trim((string) ($payload['email'] ?? ''));
+        $password = (string) ($payload['password'] ?? '');
+
+        if ($email === '' || $password === '') {
+            $this->respond(['message' => 'email and password are required'], 422);
+            return;
+        }
+
+        $user = $this->authenticateUser->execute($email, $password);
+
+        if ($user === null) {
+            $this->respond(['message' => 'Invalid credentials'], 401);
+            return;
+        }
+
+        $token = $this->jwtService->issue([
+            'sub' => $user->id(),
+            'email' => $user->email(),
+            'role' => $user->role(),
+        ]);
+
+        $this->setAuthCookie($token);
+
+        $this->respond([
+            'message' => 'Login successful',
+            'user' => $this->serializeUser($user),
+        ]);
+    }
+
+    public function me(): void
+    {
+        $claims = $this->getAuthenticatedClaims();
+
+        if ($claims === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $userId = isset($claims['sub']) ? (int) $claims['sub'] : null;
+
+        if ($userId === null || $userId <= 0) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $user = $this->getUserById->execute($userId);
+
+        if ($user === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $this->respond([
+            'message' => 'Authenticated',
+            'user' => $this->serializeUser($user),
+        ]);
+    }
+
+    public function logout(): void
+    {
+        $this->clearAuthCookie();
+        $this->respond(['message' => 'Logged out']);
     }
 
     private function readJsonBody(): array
@@ -80,9 +209,53 @@ final class UserController
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
-    /**
-     * @param User[] $users
-     */
+    private function setAuthCookie(string $token): void
+    {
+        setcookie('aecb_jwt', $token, [
+            'expires' => time() + $this->jwtTtlSeconds,
+            'path' => '/',
+            'secure' => $this->isHttpsRequest(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    private function clearAuthCookie(): void
+    {
+        setcookie('aecb_jwt', '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'secure' => $this->isHttpsRequest(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    private function getAuthenticatedClaims(): ?array
+    {
+        $token = $_COOKIE['aecb_jwt'] ?? '';
+
+        if ($token === '') {
+            return null;
+        }
+
+        return $this->jwtService->verify($token);
+    }
+
+    private function isHttpsRequest(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            return true;
+        }
+
+        return (int) ($_SERVER['SERVER_PORT'] ?? 80) === 443;
+    }
+
+    private function isAllowedRole(string $role): bool
+    {
+        return in_array($role, self::ALLOWED_ROLES, true);
+    }
+
     private function serializeUsers(array $users): array
     {
         return array_map([$this, 'serializeUser'], $users);
