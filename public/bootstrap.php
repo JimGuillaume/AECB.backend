@@ -11,6 +11,7 @@ use App\UseCase\AuthenticateUser;
 use App\UseCase\CreateUser;
 use App\UseCase\DeleteUser;
 use App\UseCase\GetUserById;
+use App\UseCase\GetUserPrestationsForMonth;
 use App\UseCase\ListUsers;
 use App\UseCase\UpdateUser;
 
@@ -24,6 +25,7 @@ $userRepository = new UserRepository($pdo);
 return new UserController(
     new ListUsers($userRepository),
     new GetUserById($userRepository),
+    new GetUserPrestationsForMonth($userRepository),
     new CreateUser($userRepository),
     new UpdateUser($userRepository),
     new DeleteUser($userRepository),

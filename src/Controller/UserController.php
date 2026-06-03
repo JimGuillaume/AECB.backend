@@ -9,6 +9,7 @@ use App\UseCase\AuthenticateUser;
 use App\UseCase\DeleteUser;
 use App\UseCase\CreateUser;
 use App\UseCase\GetUserById;
+use App\UseCase\GetUserPrestationsForMonth;
 use App\UseCase\ListUsers;
 use App\UseCase\UpdateUser;
 use DomainException;
@@ -20,6 +21,7 @@ final class UserController
     public function __construct(
         private ListUsers $listUsers,
         private GetUserById $getUserById,
+        private GetUserPrestationsForMonth $getUserPrestationsForMonth,
         private CreateUser $createUser,
         private UpdateUser $updateUser,
         private DeleteUser $deleteUser,
@@ -34,7 +36,7 @@ final class UserController
         $this->respond($this->serializeUsers($this->listUsers->execute()));
     }
 
-    public function show(int $id): void
+    public function show(int $id, int $year, int $month): void
     {
         $user = $this->getUserById->execute($id);
 
@@ -43,7 +45,16 @@ final class UserController
             return;
         }
 
-        $this->respond($this->serializeUser($user));
+        $prestations = $this->getUserPrestationsForMonth->execute($id, $year, $month);
+
+        $this->respond([
+            'user' => $this->serializeUser($user),
+            'period' => [
+                'year' => $year,
+                'month' => $month,
+            ],
+            'prestations' => $this->serializePrestations($prestations),
+        ]);
     }
 
     public function store(): void
@@ -154,7 +165,7 @@ final class UserController
         ]);
     }
 
-    public function me(): void
+    public function me(int $year, int $month): void
     {
         $claims = $this->getAuthenticatedClaims();
 
@@ -177,9 +188,16 @@ final class UserController
             return;
         }
 
+        $prestations = $this->getUserPrestationsForMonth->execute($userId, $year, $month);
+
         $this->respond([
             'message' => 'Authenticated',
             'user' => $this->serializeUser($user),
+            'period' => [
+                'year' => $year,
+                'month' => $month,
+            ],
+            'prestations' => $this->serializePrestations($prestations),
         ]);
     }
 
@@ -270,5 +288,24 @@ final class UserController
             'email' => $user->email(),
             'role' => $user->role(),
         ];
+    }
+
+    private function serializePrestations(array $prestations): array
+    {
+        return array_map(static function (array $prestation): array {
+            return [
+                'attendance_id' => isset($prestation['attendance_id']) ? (int) $prestation['attendance_id'] : null,
+                'user_id' => isset($prestation['user_id']) ? (int) $prestation['user_id'] : null,
+                'team_id' => isset($prestation['team_id']) ? (int) $prestation['team_id'] : null,
+                'attendance_date' => $prestation['attendance_date'] ?? null,
+                'code_id' => isset($prestation['code_id']) ? (int) $prestation['code_id'] : null,
+                'code_key' => $prestation['code_key'] ?? null,
+                'hours_value' => isset($prestation['hours_value']) ? (float) $prestation['hours_value'] : null,
+                'notes' => $prestation['notes'] ?? null,
+                'created_by' => isset($prestation['created_by']) ? (int) $prestation['created_by'] : null,
+                'created_at' => $prestation['created_at'] ?? null,
+                'updated_at' => $prestation['updated_at'] ?? null,
+            ];
+        }, $prestations);
     }
 }

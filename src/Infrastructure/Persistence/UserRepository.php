@@ -49,6 +49,38 @@ class UserRepository implements UserRepositoryInterface
         return array_map([$this, 'mapRowToUser'], $rows);
     }
 
+    public function findPrestationsByUserAndMonth(int $userId, int $year, int $month): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT
+                ar.attendance_id,
+                ar.user_id,
+                ar.team_id,
+                ar.attendance_date,
+                ar.code_id,
+                wc.code_name AS code_key,
+                ar.hours_value,
+                ar.notes,
+                ar.created_by,
+                ar.created_at,
+                ar.updated_at
+             FROM attendance_records ar
+             INNER JOIN work_codes wc ON wc.code_id = ar.code_id
+             WHERE ar.user_id = :user_id
+               AND YEAR(ar.attendance_date) = :year
+               AND MONTH(ar.attendance_date) = :month
+             ORDER BY ar.attendance_date ASC, ar.attendance_id ASC'
+        );
+
+        $stmt->execute([
+            'user_id' => $userId,
+            'year' => $year,
+            'month' => $month,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
     public function create(User $user): User
     {
         $stmt = $this->pdo->prepare(
