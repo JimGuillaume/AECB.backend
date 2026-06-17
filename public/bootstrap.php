@@ -25,7 +25,7 @@ use App\UseCase\ListWorkCodes;
 use App\UseCase\UpdateAttendance;
 use App\UseCase\UpdateUser;
 
-$jwtSecret = 'Cle-JwT-SGDB-Maison-Rive-42-OK99';
+$jwtSecret = 'Cle-JwT-SGDB-Maison-Rive-42-OK99'; //32Char
 $jwtTtlSeconds = 3600;
 
 $jwtService = new JwtService($jwtSecret, $jwtTtlSeconds);
