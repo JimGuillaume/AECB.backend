@@ -6,13 +6,20 @@ namespace App\Controller;
 use App\Domain\User;
 use App\Infrastructure\Security\JwtService;
 use App\UseCase\AuthenticateUser;
+use App\UseCase\CreateAttendance;
+use App\UseCase\DeleteAttendance;
 use App\UseCase\DeleteUser;
 use App\UseCase\CreateUser;
+use App\UseCase\GetTeamPrestationsForMonth;
 use App\UseCase\GetUserById;
 use App\UseCase\GetUserOvertimeForMonth;
 use App\UseCase\GetUserOvertimeForYear;
 use App\UseCase\GetUserPrestationsForMonth;
+use App\UseCase\GetUserTeamIds;
 use App\UseCase\ListUsers;
+use App\UseCase\ListUsersByTeams;
+use App\UseCase\ListWorkCodes;
+use App\UseCase\UpdateAttendance;
 use App\UseCase\UpdateUser;
 use DomainException;
 
@@ -31,7 +38,14 @@ final class UserController
         private DeleteUser $deleteUser,
         private AuthenticateUser $authenticateUser,
         private JwtService $jwtService,
-        private int $jwtTtlSeconds
+        private int $jwtTtlSeconds,
+        private GetUserTeamIds $getUserTeamIds,
+        private ListUsersByTeams $listUsersByTeams,
+        private GetTeamPrestationsForMonth $getTeamPrestationsForMonth,
+        private CreateAttendance $createAttendance,
+        private UpdateAttendance $updateAttendance,
+        private DeleteAttendance $deleteAttendance,
+        private ListWorkCodes $listWorkCodes
     ) {
     }
 
@@ -50,6 +64,7 @@ final class UserController
         }
 
         $prestations = $this->getUserPrestationsForMonth->execute($id, $year, $month);
+        $teamIds = array_map('intval', $this->getUserTeamIds->execute($id));
 
         $this->respond([
             'user' => $this->serializeUser($user),
@@ -58,6 +73,7 @@ final class UserController
                 'month' => $month,
             ],
             'prestations' => $this->serializePrestations($prestations),
+            'team_ids' => $teamIds,
         ]);
     }
 
@@ -193,6 +209,7 @@ final class UserController
         }
 
         $prestations = $this->getUserPrestationsForMonth->execute($userId, $year, $month);
+        $teamIds = array_map('intval', $this->getUserTeamIds->execute($userId));
 
         $this->respond([
             'message' => 'Authenticated',
@@ -202,7 +219,105 @@ final class UserController
                 'month' => $month,
             ],
             'prestations' => $this->serializePrestations($prestations),
+            'team_ids' => $teamIds,
         ]);
+    }
+
+    public function teamUsers(array $teamIds): void
+    {
+        $users = $this->listUsersByTeams->execute($teamIds);
+        $this->respond($this->serializeUsers($users));
+    }
+
+    public function teamAttendance(array $teamIds, int $year, int $month): void
+    {
+        $prestations = $this->getTeamPrestationsForMonth->execute($teamIds, $year, $month);
+        $this->respond([
+            'period'      => ['year' => $year, 'month' => $month],
+            'prestations' => $this->serializePrestations($prestations),
+        ]);
+    }
+
+    public function storeAttendance(): void
+    {
+        $claims = $this->getAuthenticatedClaims();
+        if ($claims === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $payload   = $this->readJsonBody();
+        $userId    = isset($payload['user_id'])        ? (int)   $payload['user_id']        : null;
+        $teamId    = isset($payload['team_id'])         ? (int)   $payload['team_id']         : null;
+        $date      = trim((string) ($payload['attendance_date'] ?? ''));
+        $codeId    = isset($payload['code_id'])         ? (int)   $payload['code_id']         : null;
+        $hours     = isset($payload['hours_value'])     ? (float) $payload['hours_value']     : null;
+        $notes     = isset($payload['notes'])           ? trim((string) $payload['notes'])    : null;
+        $createdBy = isset($claims['sub'])              ? (int)   $claims['sub']              : null;
+
+        if ($userId === null || $teamId === null || $date === '' || $codeId === null || $hours === null) {
+            $this->respond(['message' => 'user_id, team_id, attendance_date, code_id, hours_value are required'], 422);
+            return;
+        }
+
+        $record = $this->createAttendance->execute($userId, $teamId, $date, $codeId, $hours, $notes ?: null, $createdBy);
+        $this->respond($this->serializePrestation($record), 201);
+    }
+
+    public function updateAttendanceRecord(int $id): void
+    {
+        $claims = $this->getAuthenticatedClaims();
+        if ($claims === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $payload = $this->readJsonBody();
+        $codeId  = isset($payload['code_id'])     ? (int)   $payload['code_id']     : null;
+        $hours   = isset($payload['hours_value']) ? (float) $payload['hours_value'] : null;
+        $notes   = isset($payload['notes'])       ? trim((string) $payload['notes']) : null;
+
+        if ($codeId === null || $hours === null) {
+            $this->respond(['message' => 'code_id and hours_value are required'], 422);
+            return;
+        }
+
+        $record = $this->updateAttendance->execute($id, $codeId, $hours, $notes ?: null);
+        if ($record === null) {
+            $this->respond(['message' => 'Attendance record not found'], 404);
+            return;
+        }
+
+        $this->respond($this->serializePrestation($record));
+    }
+
+    public function destroyAttendance(int $id): void
+    {
+        $claims = $this->getAuthenticatedClaims();
+        if ($claims === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        if (!$this->deleteAttendance->execute($id)) {
+            $this->respond(['message' => 'Attendance record not found'], 404);
+            return;
+        }
+
+        $this->respond(['message' => 'Attendance record deleted']);
+    }
+
+    public function codes(): void
+    {
+        $list = $this->listWorkCodes->execute();
+        $this->respond(array_map(static function (array $row): array {
+            return [
+                'code_id'     => (int)  $row['code_id'],
+                'code_name'   =>        $row['code_name'],
+                'description' =>        $row['description'],
+                'worked'      => (bool) $row['worked'],
+            ];
+        }, $list));
     }
 
     public function overtime(int $userId, int $year, int $month): void
@@ -348,22 +463,25 @@ final class UserController
         ];
     }
 
+    private function serializePrestation(array $p): array
+    {
+        return [
+            'attendance_id'   => isset($p['attendance_id'])  ? (int)   $p['attendance_id']  : null,
+            'user_id'         => isset($p['user_id'])         ? (int)   $p['user_id']         : null,
+            'team_id'         => isset($p['team_id'])         ? (int)   $p['team_id']         : null,
+            'attendance_date' => $p['attendance_date'] ?? null,
+            'code_id'         => isset($p['code_id'])         ? (int)   $p['code_id']         : null,
+            'code_key'        => $p['code_key']  ?? null,
+            'hours_value'     => isset($p['hours_value'])     ? (float) $p['hours_value']     : null,
+            'notes'           => $p['notes']      ?? null,
+            'created_by'      => isset($p['created_by'])      ? (int)   $p['created_by']      : null,
+            'created_at'      => $p['created_at'] ?? null,
+            'updated_at'      => $p['updated_at'] ?? null,
+        ];
+    }
+
     private function serializePrestations(array $prestations): array
     {
-        return array_map(static function (array $prestation): array {
-            return [
-                'attendance_id' => isset($prestation['attendance_id']) ? (int) $prestation['attendance_id'] : null,
-                'user_id' => isset($prestation['user_id']) ? (int) $prestation['user_id'] : null,
-                'team_id' => isset($prestation['team_id']) ? (int) $prestation['team_id'] : null,
-                'attendance_date' => $prestation['attendance_date'] ?? null,
-                'code_id' => isset($prestation['code_id']) ? (int) $prestation['code_id'] : null,
-                'code_key' => $prestation['code_key'] ?? null,
-                'hours_value' => isset($prestation['hours_value']) ? (float) $prestation['hours_value'] : null,
-                'notes' => $prestation['notes'] ?? null,
-                'created_by' => isset($prestation['created_by']) ? (int) $prestation['created_by'] : null,
-                'created_at' => $prestation['created_at'] ?? null,
-                'updated_at' => $prestation['updated_at'] ?? null,
-            ];
-        }, $prestations);
+        return array_map([$this, 'serializePrestation'], $prestations);
     }
 }

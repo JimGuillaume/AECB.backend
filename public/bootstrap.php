@@ -9,13 +9,20 @@ use App\Infrastructure\Persistence\OvertimeRepository;
 use App\Infrastructure\Persistence\UserRepository;
 use App\Infrastructure\Security\JwtService;
 use App\UseCase\AuthenticateUser;
+use App\UseCase\CreateAttendance;
 use App\UseCase\CreateUser;
+use App\UseCase\DeleteAttendance;
 use App\UseCase\DeleteUser;
+use App\UseCase\GetTeamPrestationsForMonth;
 use App\UseCase\GetUserById;
 use App\UseCase\GetUserOvertimeForMonth;
 use App\UseCase\GetUserOvertimeForYear;
 use App\UseCase\GetUserPrestationsForMonth;
+use App\UseCase\GetUserTeamIds;
 use App\UseCase\ListUsers;
+use App\UseCase\ListUsersByTeams;
+use App\UseCase\ListWorkCodes;
+use App\UseCase\UpdateAttendance;
 use App\UseCase\UpdateUser;
 
 $jwtSecret = 'Cle-JwT-SGDB-Maison-Rive-42-OK99';
@@ -37,5 +44,12 @@ return new UserController(
     new DeleteUser($userRepository),
     new AuthenticateUser($userRepository),
     $jwtService,
-    $jwtTtlSeconds
+    $jwtTtlSeconds,
+    new GetUserTeamIds($userRepository),
+    new ListUsersByTeams($userRepository),
+    new GetTeamPrestationsForMonth($userRepository),
+    new CreateAttendance($userRepository),
+    new UpdateAttendance($userRepository),
+    new DeleteAttendance($userRepository),
+    new ListWorkCodes($userRepository)
 );

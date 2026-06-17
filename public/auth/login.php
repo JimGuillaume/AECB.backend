@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/../cors.php';
 
 $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
@@ -12,5 +12,5 @@ if ($method !== 'POST') {
     exit;
 }
 
-$userController = require __DIR__ . '/bootstrap.php';
+$userController = require __DIR__ . '/../bootstrap.php';
 $userController->login();

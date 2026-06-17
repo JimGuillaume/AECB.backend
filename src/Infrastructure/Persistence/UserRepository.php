@@ -81,6 +81,111 @@ class UserRepository implements UserRepositoryInterface
         return $stmt->fetchAll();
     }
 
+    public function findTeamIdsByUserId(int $userId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT team_id FROM users_teams WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function findUsersByTeamIds(array $teamIds): array
+    {
+        if (empty($teamIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($teamIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT u.user_id AS id, u.first_name, u.last_name, u.email, u.password_hash, u.role
+             FROM users u
+             INNER JOIN users_teams ut ON ut.user_id = u.user_id
+             WHERE ut.team_id IN ($placeholders)
+             ORDER BY u.last_name, u.first_name"
+        );
+        $stmt->execute($teamIds);
+        return array_map([$this, 'mapRowToUser'], $stmt->fetchAll());
+    }
+
+    public function findTeamPrestationsByMonth(array $teamIds, int $year, int $month): array
+    {
+        if (empty($teamIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($teamIds), '?'));
+        $params = array_merge($teamIds, [$year, $month]);
+        $stmt = $this->pdo->prepare(
+            "SELECT ar.attendance_id, ar.user_id, ar.team_id, ar.attendance_date, ar.code_id,
+                    wc.code_name AS code_key, ar.hours_value, ar.notes, ar.created_by, ar.created_at, ar.updated_at
+             FROM attendance_records ar
+             INNER JOIN work_codes wc ON wc.code_id = ar.code_id
+             WHERE ar.team_id IN ($placeholders)
+               AND YEAR(ar.attendance_date) = ?
+               AND MONTH(ar.attendance_date) = ?
+             ORDER BY ar.attendance_date ASC, ar.user_id ASC"
+        );
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findAttendanceById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ar.attendance_id, ar.user_id, ar.team_id, ar.attendance_date, ar.code_id,
+                    wc.code_name AS code_key, ar.hours_value, ar.notes, ar.created_by, ar.created_at, ar.updated_at
+             FROM attendance_records ar
+             INNER JOIN work_codes wc ON wc.code_id = ar.code_id
+             WHERE ar.attendance_id = :id'
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function createAttendance(int $userId, int $teamId, string $date, int $codeId, float $hoursValue, ?string $notes, ?int $createdBy): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO attendance_records (user_id, team_id, attendance_date, code_id, hours_value, notes, created_by)
+             VALUES (:user_id, :team_id, :date, :code_id, :hours_value, :notes, :created_by)'
+        );
+        $stmt->execute([
+            'user_id'     => $userId,
+            'team_id'     => $teamId,
+            'date'        => $date,
+            'code_id'     => $codeId,
+            'hours_value' => $hoursValue,
+            'notes'       => $notes,
+            'created_by'  => $createdBy,
+        ]);
+        return $this->findAttendanceById((int) $this->pdo->lastInsertId());
+    }
+
+    public function updateAttendance(int $id, int $codeId, float $hoursValue, ?string $notes): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE attendance_records SET code_id = :code_id, hours_value = :hours_value, notes = :notes
+             WHERE attendance_id = :id'
+        );
+        $stmt->execute([
+            'id'          => $id,
+            'code_id'     => $codeId,
+            'hours_value' => $hoursValue,
+            'notes'       => $notes,
+        ]);
+        return $stmt->rowCount() > 0 ? $this->findAttendanceById($id) : null;
+    }
+
+    public function deleteAttendance(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM attendance_records WHERE attendance_id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function findAllCodes(): array
+    {
+        $stmt = $this->pdo->query('SELECT code_id, code_name, description, is_counted_as_worked AS worked FROM work_codes ORDER BY code_id ASC');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(User $user): User
     {
         $stmt = $this->pdo->prepare(
