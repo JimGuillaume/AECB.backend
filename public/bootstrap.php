@@ -5,12 +5,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Controller\UserController;
 use App\Infrastructure\Persistence\DatabaseConnection;
+use App\Infrastructure\Persistence\OvertimeRepository;
 use App\Infrastructure\Persistence\UserRepository;
 use App\Infrastructure\Security\JwtService;
 use App\UseCase\AuthenticateUser;
 use App\UseCase\CreateUser;
 use App\UseCase\DeleteUser;
 use App\UseCase\GetUserById;
+use App\UseCase\GetUserOvertimeForMonth;
+use App\UseCase\GetUserOvertimeForYear;
 use App\UseCase\GetUserPrestationsForMonth;
 use App\UseCase\ListUsers;
 use App\UseCase\UpdateUser;
@@ -21,11 +24,14 @@ $jwtTtlSeconds = 3600;
 $jwtService = new JwtService($jwtSecret, $jwtTtlSeconds);
 $pdo = DatabaseConnection::create();
 $userRepository = new UserRepository($pdo);
+$overtimeRepository = new OvertimeRepository($pdo);
 
 return new UserController(
     new ListUsers($userRepository),
     new GetUserById($userRepository),
     new GetUserPrestationsForMonth($userRepository),
+    new GetUserOvertimeForMonth($overtimeRepository),
+    new GetUserOvertimeForYear($overtimeRepository),
     new CreateUser($userRepository),
     new UpdateUser($userRepository),
     new DeleteUser($userRepository),

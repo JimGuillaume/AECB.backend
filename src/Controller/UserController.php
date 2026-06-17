@@ -9,6 +9,8 @@ use App\UseCase\AuthenticateUser;
 use App\UseCase\DeleteUser;
 use App\UseCase\CreateUser;
 use App\UseCase\GetUserById;
+use App\UseCase\GetUserOvertimeForMonth;
+use App\UseCase\GetUserOvertimeForYear;
 use App\UseCase\GetUserPrestationsForMonth;
 use App\UseCase\ListUsers;
 use App\UseCase\UpdateUser;
@@ -22,6 +24,8 @@ final class UserController
         private ListUsers $listUsers,
         private GetUserById $getUserById,
         private GetUserPrestationsForMonth $getUserPrestationsForMonth,
+        private GetUserOvertimeForMonth $getUserOvertimeForMonth,
+        private GetUserOvertimeForYear $getUserOvertimeForYear,
         private CreateUser $createUser,
         private UpdateUser $updateUser,
         private DeleteUser $deleteUser,
@@ -201,6 +205,45 @@ final class UserController
         ]);
     }
 
+    public function overtime(int $userId, int $year, int $month): void
+    {
+        $user = $this->getUserById->execute($userId);
+
+        if ($user === null) {
+            $this->respond(['message' => 'User not found'], 404);
+            return;
+        }
+
+        $overtime = $this->getUserOvertimeForMonth->execute($userId, $year, $month);
+
+        $this->respond([
+            'user_id' => $userId,
+            'period'  => [
+                'year'  => $year,
+                'month' => $month,
+            ],
+            'overtime' => $overtime !== null ? $this->serializeOvertime($overtime) : null,
+        ]);
+    }
+
+    public function overtimeYear(int $userId, int $year): void
+    {
+        $user = $this->getUserById->execute($userId);
+
+        if ($user === null) {
+            $this->respond(['message' => 'User not found'], 404);
+            return;
+        }
+
+        $rows = $this->getUserOvertimeForYear->execute($userId, $year);
+
+        $this->respond([
+            'user_id' => $userId,
+            'year'    => $year,
+            'months'  => array_map([$this, 'serializeOvertime'], $rows),
+        ]);
+    }
+
     public function logout(): void
     {
         $this->clearAuthCookie();
@@ -287,6 +330,21 @@ final class UserController
             'last_name' => $user->last_name(),
             'email' => $user->email(),
             'role' => $user->role(),
+        ];
+    }
+
+    private function serializeOvertime(array $row): array
+    {
+        return [
+            'overtime_id'   => isset($row['overtime_id']) ? (int) $row['overtime_id'] : null,
+            'user_id'       => isset($row['user_id']) ? (int) $row['user_id'] : null,
+            'month'         => isset($row['month']) ? (int) $row['month'] : null,
+            'year'          => isset($row['year']) ? (int) $row['year'] : null,
+            'hours_earned'  => isset($row['hours_earned']) ? (float) $row['hours_earned'] : null,
+            'hours_used'    => isset($row['hours_used']) ? (float) $row['hours_used'] : null,
+            'balance'       => isset($row['balance']) ? (float) $row['balance'] : null,
+            'calculated_at' => $row['calculated_at'] ?? null,
+            'updated_at'    => $row['updated_at'] ?? null,
         ];
     }
 
