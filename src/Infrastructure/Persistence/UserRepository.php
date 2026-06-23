@@ -180,6 +180,12 @@ class UserRepository implements UserRepositoryInterface
         return $stmt->rowCount() > 0;
     }
 
+    public function findAllTeams(): array
+    {
+        $stmt = $this->pdo->query('SELECT team_id AS id, name FROM teams ORDER BY team_id ASC');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findAllCodes(): array
     {
         $stmt = $this->pdo->query('SELECT code_id, code_name, description, is_counted_as_worked AS worked FROM work_codes ORDER BY code_id ASC');

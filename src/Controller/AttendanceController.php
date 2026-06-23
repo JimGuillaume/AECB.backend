@@ -24,9 +24,7 @@ final class AttendanceController extends BaseController
 
     public function store(): void
     {
-        $claims = $this->getAuthenticatedClaims();
-        if ($claims === null) {
-            $this->respond(['message' => 'Unauthorized'], 401);
+        if (($claims = $this->requireAuth()) === null) {
             return;
         }
 
@@ -50,9 +48,7 @@ final class AttendanceController extends BaseController
 
     public function update(int $id): void
     {
-        $claims = $this->getAuthenticatedClaims();
-        if ($claims === null) {
-            $this->respond(['message' => 'Unauthorized'], 401);
+        if ($this->requireAuth() === null) {
             return;
         }
 
@@ -77,9 +73,7 @@ final class AttendanceController extends BaseController
 
     public function destroy(int $id): void
     {
-        $claims = $this->getAuthenticatedClaims();
-        if ($claims === null) {
-            $this->respond(['message' => 'Unauthorized'], 401);
+        if ($this->requireAuth() === null) {
             return;
         }
 

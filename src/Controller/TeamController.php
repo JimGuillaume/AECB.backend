@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Infrastructure\Security\JwtService;
 use App\UseCase\GetTeamPrestationsForMonth;
+use App\UseCase\ListTeams;
 use App\UseCase\ListUsersByTeams;
 
 final class TeamController extends BaseController
@@ -14,8 +15,14 @@ final class TeamController extends BaseController
         int $jwtTtlSeconds,
         private ListUsersByTeams $listUsersByTeams,
         private GetTeamPrestationsForMonth $getTeamPrestationsForMonth,
+        private ListTeams $listTeams,
     ) {
         parent::__construct($jwtService, $jwtTtlSeconds);
+    }
+
+    public function teams(): void
+    {
+        $this->respond($this->listTeams->execute());
     }
 
     public function users(array $teamIds): void

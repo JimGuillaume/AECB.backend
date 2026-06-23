@@ -45,6 +45,15 @@ abstract class BaseController
         return $this->jwtService->verify($token);
     }
 
+    protected function requireAuth(): ?array
+    {
+        $claims = $this->getAuthenticatedClaims();
+        if ($claims === null) {
+            $this->respond(['message' => 'Unauthorized'], 401);
+        }
+        return $claims;
+    }
+
     protected function setAuthCookie(string $token): void
     {
         setcookie('aecb_jwt', $token, [

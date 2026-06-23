@@ -20,6 +20,7 @@ use App\UseCase\DeleteAttendance;
 use App\UseCase\DeleteUser;
 use App\UseCase\GetTeamPrestationsForMonth;
 use App\UseCase\GetUserById;
+use App\UseCase\ListTeams;
 use App\UseCase\GetUserOvertimeForMonth;
 use App\UseCase\GetUserOvertimeForYear;
 use App\UseCase\GetUserPrestationsForMonth;
@@ -72,6 +73,7 @@ return [
         $jwtTtlSeconds,
         new ListUsersByTeams($userRepository),
         new GetTeamPrestationsForMonth($userRepository),
+        new ListTeams($userRepository),
     ),
     'overtime' => new OvertimeController(
         $jwtService,

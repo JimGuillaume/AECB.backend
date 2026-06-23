@@ -3,27 +3,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../cors.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    header('Content-Type: application/json');
-    echo json_encode(['message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_method('GET');
 
-$userId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
-$year   = isset($_GET['year'])    ? (int) $_GET['year']    : (int) date('Y');
-
-if ($userId === null || $userId <= 0) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    echo json_encode(['message' => 'Missing or invalid user_id parameter'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$userId = require_id_param('user_id');
+$year   = isset($_GET['year']) ? (int) $_GET['year'] : (int) date('Y');
 
 if ($year <= 0) {
     http_response_code(400);
     header('Content-Type: application/json');
-    echo json_encode(['message' => 'Invalid year parameter'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['message' => 'Invalid year parameter'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 

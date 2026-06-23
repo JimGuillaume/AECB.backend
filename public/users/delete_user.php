@@ -3,23 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../cors.php';
 
-$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+require_method('DELETE');
 
-if ($method !== 'DELETE') {
-    http_response_code(405);
-    header('Allow: DELETE');
-    echo json_encode(['message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
-
-$id = isset($_GET['id']) ? (int) $_GET['id'] : null;
-
-if ($id === null) {
-    http_response_code(400);
-    header('Content-Type: application/json');
-    echo json_encode(['message' => 'Missing id parameter'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
+$id = require_id_param('id');
 
 $c = require __DIR__ . '/../bootstrap.php';
 $c['user']->destroy($id);

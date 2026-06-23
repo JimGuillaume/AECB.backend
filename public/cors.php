@@ -7,3 +7,5 @@ use App\Infrastructure\Http\Cors;
 
 Cors::apply();
 Cors::handlePreflight();
+
+require_once __DIR__ . '/helpers.php';
