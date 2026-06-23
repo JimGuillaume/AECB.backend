@@ -21,5 +21,5 @@ if ($id === null) {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-$userController->update($id);
+$c = require __DIR__ . '/../bootstrap.php';
+$c['user']->update($id);

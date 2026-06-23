@@ -13,5 +13,5 @@ if ($method !== 'POST') {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-$userController->logout();
+$c = require __DIR__ . '/../bootstrap.php';
+$c['auth']->logout();

@@ -12,5 +12,5 @@ if (isset($_GET['id'])) {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-$userController->index();
+$c = require __DIR__ . '/../bootstrap.php';
+$c['user']->index();

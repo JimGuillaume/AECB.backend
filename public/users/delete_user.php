@@ -21,5 +21,5 @@ if ($id === null) {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-$userController->destroy($id);
+$c = require __DIR__ . '/../bootstrap.php';
+$c['user']->destroy($id);

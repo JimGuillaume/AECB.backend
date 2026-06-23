@@ -12,5 +12,5 @@ if ($method !== 'POST') {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-$userController->store();
+$c = require __DIR__ . '/../bootstrap.php';
+$c['user']->store();

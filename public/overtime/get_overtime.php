@@ -10,8 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-
 $userId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
 $year   = isset($_GET['year'])    ? (int) $_GET['year']    : (int) date('Y');
 $month  = isset($_GET['month'])   ? (int) $_GET['month']   : (int) date('n');
@@ -30,4 +28,5 @@ if ($year <= 0 || $month < 1 || $month > 12) {
     exit;
 }
 
-$userController->overtime($userId, $year, $month);
+$c = require __DIR__ . '/../bootstrap.php';
+$c['overtime']->month($userId, $year, $month);

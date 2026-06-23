@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../cors.php';
 
-$userController = require __DIR__ . '/../bootstrap.php';
-
 $teamIds = [];
 if (isset($_GET['team_ids']) && $_GET['team_ids'] !== '') {
     $teamIds = array_values(array_filter(
@@ -13,4 +11,5 @@ if (isset($_GET['team_ids']) && $_GET['team_ids'] !== '') {
     ));
 }
 
-$userController->teamUsers($teamIds);
+$c = require __DIR__ . '/../bootstrap.php';
+$c['team']->users($teamIds);

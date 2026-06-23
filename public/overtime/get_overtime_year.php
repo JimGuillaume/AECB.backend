@@ -10,8 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-$userController = require __DIR__ . '/../bootstrap.php';
-
 $userId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
 $year   = isset($_GET['year'])    ? (int) $_GET['year']    : (int) date('Y');
 
@@ -29,4 +27,5 @@ if ($year <= 0) {
     exit;
 }
 
-$userController->overtimeYear($userId, $year);
+$c = require __DIR__ . '/../bootstrap.php';
+$c['overtime']->year($userId, $year);
