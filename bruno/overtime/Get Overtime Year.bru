@@ -1,0 +1,16 @@
+meta {
+  name: Get Overtime Year
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/overtime/get_overtime_year.php
+  body: none
+  auth: none
+}
+
+query {
+  user_id: 1
+  year: 2026
+}

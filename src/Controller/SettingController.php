@@ -30,8 +30,6 @@ final class SettingController extends BaseController
         parent::__construct($jwtService, $jwtTtlSeconds);
     }
 
-    // ── Schedules ────────────────────────────────────────────────────────────
-
     public function schedules(): void
     {
         $list = $this->listWorkSchedules->execute();

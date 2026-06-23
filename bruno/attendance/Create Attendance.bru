@@ -1,0 +1,22 @@
+meta {
+  name: Create Attendance
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/attendance/post_attendance.php
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_id": 1,
+    "team_id": 1,
+    "attendance_date": "2026-06-23",
+    "code_id": 1,
+    "hours_value": 8,
+    "notes": ""
+  }
+}

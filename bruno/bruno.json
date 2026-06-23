@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "name": "AECB API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.0044155120849609375,
+  "filesCount": 25,
+  "presets": {
+    "requestType": "http",
+    "requestUrl": "http://localhost/AECB.backend/public"
+  }
+}

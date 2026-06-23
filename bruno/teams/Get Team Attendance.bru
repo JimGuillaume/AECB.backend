@@ -1,0 +1,17 @@
+meta {
+  name: Get Team Attendance
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/teams/get_team_attendance.php
+  body: none
+  auth: none
+}
+
+query {
+  team_ids: 1,2
+  year: 2026
+  month: 6
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Update Schedule
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/schedules/update_schedule.php
+  body: json
+  auth: none
+}
+
+query {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Temps plein",
+    "fraction": 1.0,
+    "daily_hours": 7.5
+  }
+}

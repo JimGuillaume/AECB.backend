@@ -1,0 +1,23 @@
+meta {
+  name: Update Attendance
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/attendance/update_attendance.php
+  body: json
+  auth: none
+}
+
+query {
+  id: 1
+}
+
+body:json {
+  {
+    "code_id": 1,
+    "hours_value": 7.5,
+    "notes": "Left early"
+  }
+}

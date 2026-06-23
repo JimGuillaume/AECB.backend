@@ -1,0 +1,24 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/users/update_user.php
+  body: json
+  auth: none
+}
+
+query {
+  id: 1
+}
+
+body:json {
+  {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email": "jane.doe@example.com",
+    "role": "worker"
+  }
+}
