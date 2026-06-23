@@ -19,6 +19,15 @@ interface UserRepositoryInterface
     public function deleteAttendance(int $id): bool;
     public function findAllTeams(): array;
     public function findAllCodes(): array;
+    public function findAllSchedules(): array;
+    public function findCodeById(int $id): ?array;
+    public function createCode(string $codeName, string $description, bool $isWorked): array;
+    public function updateCode(int $id, string $codeName, string $description, bool $isWorked): ?array;
+    public function deleteCode(int $id): bool;
+    public function findScheduleById(int $id): ?array;
+    public function createSchedule(string $name, float $fraction, float $dailyHours): array;
+    public function updateSchedule(int $id, string $name, float $fraction, float $dailyHours): ?array;
+    public function deleteSchedule(int $id): bool;
     public function create(User $user): User;
     public function delete(int $id): bool;
     public function update(User $user): User;

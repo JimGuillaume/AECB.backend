@@ -16,8 +16,12 @@ use App\Infrastructure\Security\JwtService;
 use App\UseCase\AuthenticateUser;
 use App\UseCase\CreateAttendance;
 use App\UseCase\CreateUser;
+use App\UseCase\CreateWorkCode;
+use App\UseCase\CreateWorkSchedule;
 use App\UseCase\DeleteAttendance;
 use App\UseCase\DeleteUser;
+use App\UseCase\DeleteWorkCode;
+use App\UseCase\DeleteWorkSchedule;
 use App\UseCase\GetTeamPrestationsForMonth;
 use App\UseCase\GetUserById;
 use App\UseCase\ListTeams;
@@ -31,6 +35,8 @@ use App\UseCase\ListWorkCodes;
 use App\UseCase\ListWorkSchedules;
 use App\UseCase\UpdateAttendance;
 use App\UseCase\UpdateUser;
+use App\UseCase\UpdateWorkCode;
+use App\UseCase\UpdateWorkSchedule;
 
 $jwtSecret     = 'Cle-JwT-SGDB-Maison-Rive-42-OK99'; //32Char
 $jwtTtlSeconds = 3600;
@@ -86,5 +92,12 @@ return [
         $jwtService,
         $jwtTtlSeconds,
         new ListWorkSchedules($userRepository),
+        new ListWorkCodes($userRepository),
+        new CreateWorkCode($userRepository),
+        new UpdateWorkCode($userRepository),
+        new DeleteWorkCode($userRepository),
+        new CreateWorkSchedule($userRepository),
+        new UpdateWorkSchedule($userRepository),
+        new DeleteWorkSchedule($userRepository),
     ),
 ];

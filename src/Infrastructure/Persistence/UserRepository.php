@@ -198,6 +198,70 @@ class UserRepository implements UserRepositoryInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function findCodeById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT code_id, code_name, description, is_counted_as_worked AS worked FROM work_codes WHERE code_id = :id');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function createCode(string $codeName, string $description, bool $isWorked): array
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO work_codes (code_name, description, is_counted_as_worked) VALUES (:code_name, :description, :worked)');
+        $stmt->execute(['code_name' => $codeName, 'description' => $description, 'worked' => (int) $isWorked]);
+        return $this->findCodeById((int) $this->pdo->lastInsertId());
+    }
+
+    public function updateCode(int $id, string $codeName, string $description, bool $isWorked): ?array
+    {
+        if ($this->findCodeById($id) === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('UPDATE work_codes SET code_name = :code_name, description = :description, is_counted_as_worked = :worked WHERE code_id = :id');
+        $stmt->execute(['id' => $id, 'code_name' => $codeName, 'description' => $description, 'worked' => (int) $isWorked]);
+        return $this->findCodeById($id);
+    }
+
+    public function deleteCode(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM work_codes WHERE code_id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function findScheduleById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT schedule_id, name, fraction, daily_hours FROM work_schedules WHERE schedule_id = :id');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function createSchedule(string $name, float $fraction, float $dailyHours): array
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO work_schedules (name, fraction, daily_hours, active) VALUES (:name, :fraction, :daily_hours, 1)');
+        $stmt->execute(['name' => $name, 'fraction' => $fraction, 'daily_hours' => $dailyHours]);
+        return $this->findScheduleById((int) $this->pdo->lastInsertId());
+    }
+
+    public function updateSchedule(int $id, string $name, float $fraction, float $dailyHours): ?array
+    {
+        if ($this->findScheduleById($id) === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('UPDATE work_schedules SET name = :name, fraction = :fraction, daily_hours = :daily_hours WHERE schedule_id = :id');
+        $stmt->execute(['id' => $id, 'name' => $name, 'fraction' => $fraction, 'daily_hours' => $dailyHours]);
+        return $this->findScheduleById($id);
+    }
+
+    public function deleteSchedule(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE work_schedules SET active = 0 WHERE schedule_id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function create(User $user): User
     {
         $stmt = $this->pdo->prepare(
