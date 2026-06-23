@@ -188,7 +188,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function findAllSchedules(): array
     {
-        $stmt = $this->pdo->query('SELECT schedule_id, name, fraction, daily_hours FROM worker_schedules WHERE active = 1 ORDER BY fraction DESC');
+        $stmt = $this->pdo->query('SELECT schedule_id, name, fraction, daily_hours FROM work_schedules WHERE active = 1 ORDER BY fraction DESC');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
