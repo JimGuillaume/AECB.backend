@@ -36,6 +36,7 @@ abstract class BaseController
 
     protected function getAuthenticatedClaims(): ?array
     {
+        // Le token JWT est lu depuis un cookie httpOnly — jamais depuis le header Authorization
         $token = $_COOKIE['aecb_jwt'] ?? '';
 
         if ($token === '') {
@@ -68,6 +69,7 @@ abstract class BaseController
     protected function clearAuthCookie(): void
     {
         setcookie('aecb_jwt', '', [
+            // expires dans le passé force le navigateur à supprimer le cookie immédiatement
             'expires'  => time() - 3600,
             'path'     => '/',
             'secure'   => $this->isHttpsRequest(),
@@ -82,6 +84,7 @@ abstract class BaseController
             return true;
         }
 
+        // Certains reverse proxies (ex: nginx) transmettent HTTPS via SERVER_PORT 443 sans définir $_SERVER['HTTPS']
         return (int) ($_SERVER['SERVER_PORT'] ?? 80) === 443;
     }
 
@@ -104,6 +107,7 @@ abstract class BaseController
     protected function serializePrestation(array $p): array
     {
         return [
+            // Tous les champs sont castés explicitement car PDO retourne tout en string
             'attendance_id'   => isset($p['attendance_id'])  ? (int)   $p['attendance_id']  : null,
             'user_id'         => isset($p['user_id'])         ? (int)   $p['user_id']         : null,
             'team_id'         => isset($p['team_id'])         ? (int)   $p['team_id']         : null,

@@ -39,6 +39,7 @@ final class JwtService
         [$encodedHeader, $encodedPayload, $signature] = $parts;
         $expectedSignature = $this->sign($encodedHeader . '.' . $encodedPayload);
 
+        // hash_equals() compare en temps constant pour éviter les attaques par timing
         if (!hash_equals($expectedSignature, $signature)) {
             return null;
         }
@@ -63,6 +64,7 @@ final class JwtService
 
     private function base64UrlEncode(string $value): string
     {
+        // base64url remplace '+' par '-' et '/' par '_' pour être compatible avec les URLs et les cookies
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 
@@ -70,6 +72,7 @@ final class JwtService
     {
         $remainder = strlen($value) % 4;
 
+        // Le padding '=' est retiré en encodage et doit être restauré avant le décodage base64 standard
         if ($remainder !== 0) {
             $value .= str_repeat('=', 4 - $remainder);
         }

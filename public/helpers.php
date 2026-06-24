@@ -29,6 +29,7 @@ function require_id_param(string $param = 'id'): int
 function parse_year_month(): array
 {
     $year  = isset($_GET['year'])  ? (int) $_GET['year']  : (int) date('Y');
+    // date('n') retourne le mois sans zéro de tête (1–12), contrairement à 'm'
     $month = isset($_GET['month']) ? (int) $_GET['month'] : (int) date('n');
     if ($year <= 0 || $month < 1 || $month > 12) {
         http_response_code(400);
@@ -44,6 +45,7 @@ function parse_team_ids(): array
     if (!isset($_GET['team_ids']) || $_GET['team_ids'] === '') {
         return [];
     }
+    // Filtre les IDs négatifs ou nuls issus de la conversion intval sur des valeurs non numériques
     return array_values(array_filter(
         array_map('intval', explode(',', $_GET['team_ids'])),
         fn(int $id) => $id > 0

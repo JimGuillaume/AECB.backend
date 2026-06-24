@@ -15,6 +15,7 @@ final class GetUserOvertimeForYear
     {
         $rows = $this->overtime->findByUserAndYear($userId, $year);
 
+        // Indexe les lignes par mois pour pouvoir remplir les mois manquants en O(1)
         $indexed = [];
         foreach ($rows as $row) {
             $indexed[(int) $row['month']] = $row;
@@ -22,6 +23,7 @@ final class GetUserOvertimeForYear
 
         $result = [];
         for ($m = 1; $m <= 12; $m++) {
+            // Les mois sans enregistrement en base sont retournés avec des zéros pour garder un tableau de 12 entrées
             $result[] = $indexed[$m] ?? [
                 'overtime_id'   => null,
                 'user_id'       => $userId,

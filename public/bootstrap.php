@@ -38,7 +38,9 @@ use App\UseCase\UpdateUser;
 use App\UseCase\UpdateWorkCode;
 use App\UseCase\UpdateWorkSchedule;
 
-$jwtSecret     = 'Cle-JwT-SGDB-Maison-Rive-42-OK99'; //32Char
+// Clé secrète utilisée pour signer les tokens JWT — à déplacer dans une variable d'environnement en production
+$jwtSecret     = 'Cle-JwT-SGDB-Maison-Rive-42-OK99';
+// Durée de validité du token en secondes (1 heure)
 $jwtTtlSeconds = 3600;
 
 $jwtService         = new JwtService($jwtSecret, $jwtTtlSeconds);
