@@ -5,12 +5,12 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/overtime/get_overtime_year.php
+  url: {{baseUrl}}/overtime/get_overtime_year.php?user_id=5&year=2026
   body: none
   auth: none
 }
 
-query {
-  user_id: 1
+params:query {
+  user_id: 5
   year: 2026
 }

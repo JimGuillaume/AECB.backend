@@ -5,11 +5,11 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/teams/get_team_users.php
+  url: {{baseUrl}}/teams/get_team_users.php?team_ids=3
   body: none
   auth: none
 }
 
-query {
-  team_ids: 1,2
+params:query {
+  team_ids: 3
 }

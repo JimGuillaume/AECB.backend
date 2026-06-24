@@ -10,6 +10,6 @@
   "filesCount": 25,
   "presets": {
     "requestType": "http",
-    "requestUrl": "http://localhost/AECB.backend/public"
+    "requestUrl": ""
   }
 }

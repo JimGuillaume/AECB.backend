@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/teams/get_team_attendance.php
+  url: {{baseUrl}}/teams/get_team_attendance.php?team_ids=1&year=2026&month=6
   body: none
   auth: none
 }
 
-query {
-  team_ids: 1,2
+params:query {
+  team_ids: 1
   year: 2026
   month: 6
 }
